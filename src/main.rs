@@ -2,7 +2,7 @@ mod image_processing;
 
 use image::{open, GrayImage, ImageBuffer, Luma};
 use image_processing::filters::{ImageFilter, SobelFilter};
-use ocl::ProQue;
+use image_processing::image_processor::ImageProcessor;
 use std::fs;
 
 fn list_input_output_image_files() -> Vec<(String, String)> {
@@ -52,54 +52,12 @@ fn write_image_file(file: &str, pixels: Vec<f32>, width: u32, height: u32) {
     println!("Sobel edge detection complete. Output saved to {}.", file);
 }
 
-fn process_image(pixels: Vec<f32>, width: u32, height: u32) -> Vec<f32> {
-    let pro_que = ProQue::builder()
-        .src(SobelFilter::get_kernel())
-        .dims((width, height))
-        .build()
-        .expect("Failed to build OpenCL program");
-
-    let input_buffer = pro_que
-        .create_buffer::<f32>()
-        .expect("Failed to create input buffer");
-
-    let output_buffer = pro_que
-        .create_buffer::<f32>()
-        .expect("Failed to create output buffer");
-
-    input_buffer
-        .write(&pixels)
-        .enq()
-        .expect("Failed to write to buffer");
-
-    let kernel = pro_que
-        .kernel_builder("sobelEdgeDetection")
-        .arg(&input_buffer)
-        .arg(&output_buffer)
-        .arg(&(width as i32))
-        .arg(&(height as i32))
-        .build()
-        .expect("Failed to create kernel");
-
-    unsafe {
-        // Execute the Sobel kernel
-        kernel.enq().expect("Failed to enqueue kernel");
-    }
-
-    let mut output_pixels = vec![0.0f32; pixels.len()];
-    output_buffer
-        .read(&mut output_pixels)
-        .enq()
-        .expect("Failed to read buffer");
-
-    output_pixels
-}
-
 fn main() {
     let files = list_input_output_image_files();
     for (input, output) in &files {
         let (input_pixels, (width, height)) = read_image_file(input);
-        let output_pixels = process_image(input_pixels, width, height);
+        let sobel_processor = ImageProcessor::new(&input_pixels, width, height);
+        let output_pixels = sobel_processor.process(SobelFilter::get_kernel());
         write_image_file(&output, output_pixels, width, height);
     }
 }
