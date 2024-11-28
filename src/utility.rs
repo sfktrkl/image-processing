@@ -37,11 +37,11 @@ impl Utility {
         )
     }
 
-    pub fn write_image_file(file: &str, pixels: Vec<f32>, width: u32, height: u32) {
+    pub fn write_image_file(file: &str, pixels: Vec<f32>, dimensions: (u32, u32)) {
         // Normalize the output and save as an image
         let max_val = pixels.iter().cloned().fold(0.0 / 0.0, f32::max); // Find max value
-        let output_image: GrayImage = GrayImage::from_fn(width, height, |x, y| {
-            let pixel_value = (pixels[(y * width + x) as usize] / max_val * 255.0) as u8;
+        let output_image: GrayImage = GrayImage::from_fn(dimensions.0, dimensions.1, |x, y| {
+            let pixel_value = (pixels[(y * dimensions.0 + x) as usize] / max_val * 255.0) as u8;
             Luma([pixel_value])
         });
 

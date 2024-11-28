@@ -2,23 +2,18 @@ use ocl::ProQue;
 
 pub struct ImageProcessor<'a> {
     pixels: &'a [f32],
-    width: u32,
-    height: u32,
+    dimensions: (u32, u32),
 }
 
 impl<'a> ImageProcessor<'a> {
-    pub fn new(pixels: &'a [f32], width: u32, height: u32) -> ImageProcessor<'a> {
-        Self {
-            pixels,
-            width,
-            height,
-        }
+    pub fn new(pixels: &'a [f32], dimensions: (u32, u32)) -> ImageProcessor<'a> {
+        Self { pixels, dimensions }
     }
 
     pub fn process(&self, filter: &str) -> Vec<f32> {
         let pro_que = ProQue::builder()
             .src(filter)
-            .dims((self.width, self.height))
+            .dims(self.dimensions)
             .build()
             .expect("Failed to build OpenCL program");
 
@@ -39,8 +34,8 @@ impl<'a> ImageProcessor<'a> {
             .kernel_builder("sobelEdgeDetection")
             .arg(&input_buffer)
             .arg(&output_buffer)
-            .arg(&(self.width as i32))
-            .arg(&(self.height as i32))
+            .arg(&(self.dimensions.0 as i32))
+            .arg(&(self.dimensions.1 as i32))
             .build()
             .expect("Failed to create kernel");
 
