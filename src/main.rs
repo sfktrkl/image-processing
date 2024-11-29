@@ -1,8 +1,10 @@
 mod image_processing;
+mod image_viewer;
 mod utility;
 
 use image_processing::filters::{ImageFilter, SobelFilter};
 use image_processing::image_processor::ImageProcessor;
+use image_viewer::image_viewer::ImageViewer;
 use std::thread;
 use utility::Utility;
 
@@ -10,12 +12,15 @@ fn main() {
     let files = Utility::list_input_output_image_files();
 
     let mut handles = vec![];
-    for (input, output) in files {
+    for (input, _) in files {
         let handle = thread::spawn(move || {
-            let (input_pixels, dimensions) = Utility::read_image_file(&input);
-            let image_processor = ImageProcessor::new(&input_pixels, dimensions);
+            let (input_pixels, dimensions) = Utility::image_file_to_rgb(&input);
+            let grayscale_pixels = Utility::convert_rgb_to_grayscale(&input_pixels);
+            let image_processor = ImageProcessor::new(&grayscale_pixels, dimensions);
             let sobel_filter_output = image_processor.process(SobelFilter::get_kernel());
-            Utility::write_image_file(&output, sobel_filter_output, dimensions);
+            let output_pixels = Utility::convert_grayscale_to_rgb(&sobel_filter_output);
+            let mut window = ImageViewer::new(input_pixels, output_pixels, dimensions);
+            window.run();
         });
         handles.push(handle);
     }

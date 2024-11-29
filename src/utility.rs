@@ -1,4 +1,4 @@
-use image::{open, GrayImage, Luma};
+use image::open;
 use std::fs;
 
 pub struct Utility;
@@ -29,25 +29,46 @@ impl Utility {
         paths
     }
 
-    pub fn read_image_file(file: &str) -> (Vec<f32>, (u32, u32)) {
-        let img = open(file).expect("Failed to open image").to_luma8();
-        (
-            img.pixels().map(|p| p[0] as f32).collect(),
-            img.dimensions(),
-        )
+    pub fn image_file_to_rgb(file: &str) -> (Vec<u32>, (u32, u32)) {
+        let img = open(file).expect("Failed to open image");
+
+        let image = img.to_rgb8();
+        let pixels: Vec<u32> = image
+            .pixels()
+            .map(|p| {
+                let r = p[0] as u32;
+                let g = p[1] as u32;
+                let b = p[2] as u32;
+                let a = 255;
+
+                (a << 24) | (r << 16) | (g << 8) | b
+            })
+            .collect();
+
+        (pixels, image.dimensions())
     }
 
-    pub fn write_image_file(file: &str, pixels: Vec<f32>, dimensions: (u32, u32)) {
-        // Normalize the output and save as an image
-        let max_val = pixels.iter().cloned().fold(0.0 / 0.0, f32::max); // Find max value
-        let output_image: GrayImage = GrayImage::from_fn(dimensions.0, dimensions.1, |x, y| {
-            let pixel_value = (pixels[(y * dimensions.0 + x) as usize] / max_val * 255.0) as u8;
-            Luma([pixel_value])
-        });
+    pub fn convert_rgb_to_grayscale(pixels: &Vec<u32>) -> Vec<f32> {
+        pixels
+            .chunks(1)
+            .map(|pixel| {
+                let r = ((pixel[0] >> 16) & 0xFF) as f32 / 255.0;
+                let g = ((pixel[0] >> 8) & 0xFF) as f32 / 255.0;
+                let b = (pixel[0] & 0xFF) as f32 / 255.0;
 
-        output_image
-            .save(file)
-            .expect("Failed to save output image");
-        println!("Sobel edge detection complete. Output saved to {}.", file);
+                0.2989 * r + 0.5870 * g + 0.1140 * b
+            })
+            .collect()
+    }
+
+    pub fn convert_grayscale_to_rgb(pixels: &[f32]) -> Vec<u32> {
+        pixels
+            .iter()
+            .map(|&value| {
+                let intensity = (value * 255.0).clamp(0.0, 255.0) as u8;
+
+                (intensity as u32) << 16 | (intensity as u32) << 8 | (intensity as u32)
+            })
+            .collect()
     }
 }
