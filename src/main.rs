@@ -19,7 +19,7 @@ fn main() {
             let image_processor = ImageProcessor::new(&grayscale_pixels, dimensions);
             let sobel_filter_output = image_processor.process(SobelFilter::get_kernel());
             let output_pixels = Utility::convert_grayscale_to_rgb(&sobel_filter_output);
-            let mut window = ImageViewer::new(input_pixels, output_pixels, dimensions);
+            let mut window = ImageViewer::new(input_pixels, vec![output_pixels], dimensions);
             window.run();
         });
         handles.push(handle);
