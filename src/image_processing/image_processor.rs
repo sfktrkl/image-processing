@@ -10,9 +10,9 @@ impl<'a> ImageProcessor<'a> {
         Self { pixels, dimensions }
     }
 
-    pub fn process(&self, filter: &str) -> Vec<f32> {
+    pub fn process(&self, filter: (&str, &str)) -> Vec<f32> {
         let pro_que = ProQue::builder()
-            .src(filter)
+            .src(filter.0)
             .dims(self.dimensions)
             .build()
             .expect("Failed to build OpenCL program");
@@ -31,7 +31,7 @@ impl<'a> ImageProcessor<'a> {
             .expect("Failed to write to buffer");
 
         let kernel = pro_que
-            .kernel_builder("sobelEdgeDetection")
+            .kernel_builder(filter.1)
             .arg(&input_buffer)
             .arg(&output_buffer)
             .arg(&(self.dimensions.0 as i32))

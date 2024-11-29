@@ -1,11 +1,11 @@
 use minifb::Key;
 
 pub struct Cell {
+    image: Vec<u32>,
     width: u32,
     height: u32,
     x_offset: u32,
     y_offset: u32,
-    image: Vec<u32>,
 }
 
 pub struct Window {
@@ -29,37 +29,39 @@ impl ImageViewer {
         let cell_width = image_dimensions.0;
         let cell_height = image_dimensions.1;
 
+        let grid_cols = processed.len().min(3) as u32;
+        let grid_rows = (processed.len() as f32 / grid_cols as f32).ceil() as u32 + 1;
+
+        let window_width = cell_width * grid_cols;
+        let window_height = cell_height * grid_rows;
+
         let original_image = Cell {
-            x_offset: 0,
-            y_offset: 0,
+            image: original,
             width: cell_width,
             height: cell_height,
-            image: original,
+            x_offset: (window_width - cell_width) / 2,
+            y_offset: 0,
         };
 
         let processed_images: Vec<Cell> = processed
             .into_iter()
-            .map(|processed_image| Cell {
-                x_offset: 0,
-                y_offset: 0,
-                width: cell_width,
-                height: cell_height,
-                image: processed_image,
+            .enumerate()
+            .map(|(index, processed_image)| {
+                let col = index as u32 % grid_cols;
+                let row = index as u32 / grid_cols + 1;
+
+                Cell {
+                    image: processed_image,
+                    width: cell_width,
+                    height: cell_height,
+                    x_offset: col * cell_width,
+                    y_offset: row * cell_height,
+                }
             })
             .collect();
 
-        let grid_cols = if processed_images.len() <= 3 {
-            processed_images.len() as u32
-        } else {
-            3
-        };
-        let grid_rows = (processed_images.len() as f32 / grid_cols as f32).ceil() as u32 + 1;
-
         let mut cells = vec![original_image];
         cells.extend(processed_images);
-
-        let window_width = cell_width * grid_cols;
-        let window_height = cell_height * grid_rows;
 
         let popup = minifb::Window::new(
             "Image Viewer",
@@ -74,17 +76,6 @@ impl ImageViewer {
             height: window_height,
             window: popup,
         };
-
-        if let Some(first_cell) = cells.first_mut() {
-            first_cell.x_offset = ((window_width - first_cell.width) / 2) as u32;
-        }
-
-        for (index, cell) in cells.iter_mut().skip(1).enumerate() {
-            let col = index % grid_cols as usize;
-            let row = index / grid_cols as usize + 1;
-            cell.x_offset = (col * cell.width as usize) as u32;
-            cell.y_offset = row as u32 * cell.height;
-        }
 
         Self {
             window,
