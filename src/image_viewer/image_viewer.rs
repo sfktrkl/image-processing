@@ -1,4 +1,4 @@
-use minifb::Key;
+use minifb::{Key, Window, WindowOptions};
 
 pub struct Cell {
     image: Vec<u32>,
@@ -8,14 +8,14 @@ pub struct Cell {
     y_offset: u32,
 }
 
-pub struct Window {
+pub struct Viewport {
     width: u32,
     height: u32,
-    window: minifb::Window,
+    window: Window,
 }
 
 pub struct ImageViewer {
-    window: Window,
+    window: Viewport,
     cells: Vec<Cell>,
     buffer: Option<Vec<u32>>,
 }
@@ -63,15 +63,15 @@ impl ImageViewer {
         let mut cells = vec![original_image];
         cells.extend(processed_images);
 
-        let popup = minifb::Window::new(
+        let popup = Window::new(
             "Image Viewer",
             window_width as usize,
             window_height as usize,
-            minifb::WindowOptions::default(),
+            WindowOptions::default(),
         )
         .expect("Unable to create window");
 
-        let window = Window {
+        let window = Viewport {
             width: window_width,
             height: window_height,
             window: popup,
