@@ -2,15 +2,15 @@ use minifb::{Key, Window, WindowOptions};
 
 pub struct Cell {
     image: Vec<u32>,
-    width: u32,
-    height: u32,
-    x_offset: u32,
-    y_offset: u32,
+    width: usize,
+    height: usize,
+    x_offset: usize,
+    y_offset: usize,
 }
 
 pub struct Viewport {
-    width: u32,
-    height: u32,
+    width: usize,
+    height: usize,
     window: Window,
 }
 
@@ -25,11 +25,11 @@ impl ImageViewer {
         processed: Vec<Vec<u32>>,
         image_dimensions: (u32, u32),
     ) -> ImageViewer {
-        let cell_width = image_dimensions.0;
-        let cell_height = image_dimensions.1;
+        let cell_width = image_dimensions.0 as usize;
+        let cell_height = image_dimensions.1 as usize;
 
-        let grid_cols = processed.len().min(3) as u32;
-        let grid_rows = (processed.len() as f32 / grid_cols as f32).ceil() as u32 + 1;
+        let grid_cols = processed.len().min(3);
+        let grid_rows = (processed.len() as f32 / grid_cols as f32).ceil() as usize + 1;
 
         let window_width = cell_width * grid_cols;
         let window_height = cell_height * grid_rows;
@@ -46,8 +46,8 @@ impl ImageViewer {
             .into_iter()
             .enumerate()
             .map(|(index, processed_image)| {
-                let col = index as u32 % grid_cols;
-                let row = index as u32 / grid_cols + 1;
+                let col = index % grid_cols;
+                let row = index / grid_cols + 1;
 
                 Cell {
                     image: processed_image,
@@ -64,8 +64,8 @@ impl ImageViewer {
 
         let popup = Window::new(
             "Image Viewer",
-            window_width as usize,
-            window_height as usize,
+            window_width,
+            window_height,
             WindowOptions::default(),
         )
         .expect("Unable to create window");
@@ -76,7 +76,7 @@ impl ImageViewer {
             window: popup,
         };
 
-        let buffer = Self::render(cells, window_width as usize, window_height as usize);
+        let buffer = Self::render(cells, window_width, window_height);
 
         Self { window, buffer }
     }
@@ -84,11 +84,9 @@ impl ImageViewer {
     pub fn run(&mut self) {
         let window = &mut self.window.window;
         while window.is_open() && !window.is_key_down(Key::Escape) {
-            if let Err(error) = window.update_with_buffer(
-                &self.buffer,
-                self.window.width as usize,
-                self.window.height as usize,
-            ) {
+            if let Err(error) =
+                window.update_with_buffer(&self.buffer, self.window.width, self.window.height)
+            {
                 eprintln!("Error updating buffer: {:?}", error);
             }
         }
@@ -105,18 +103,18 @@ impl ImageViewer {
     }
 
     fn render_cell(cell: &Cell, buffer: &mut [u32], width: usize, height: usize) {
-        let image_width = cell.width as usize;
-        let image_height = cell.height as usize;
+        let image_width = cell.width;
+        let image_height = cell.height;
 
         for y in 0..image_height {
-            let target_y = y + cell.y_offset as usize;
-            if target_y >= height as usize {
+            let target_y = y + cell.y_offset;
+            if target_y >= height {
                 break;
             }
 
             for x in 0..image_width {
-                let target_x = x + cell.x_offset as usize;
-                if target_x >= width as usize {
+                let target_x = x + cell.x_offset;
+                if target_x >= width {
                     break;
                 }
 
@@ -126,7 +124,7 @@ impl ImageViewer {
                 let g = (pixel >> 8 & 0xFF) as u8;
                 let b = (pixel & 0xFF) as u8;
 
-                let target_index = target_y * width as usize + target_x;
+                let target_index = target_y * width + target_x;
                 buffer[target_index] = (r as u32) << 16 | (g as u32) << 8 | (b as u32);
             }
         }
