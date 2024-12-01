@@ -99,37 +99,33 @@ impl Viewer {
         let mut buffer = vec![0; width * height];
 
         for cell in cells {
-            Self::render_cell(&cell, &mut buffer, width, height);
-        }
+            let image_width = cell.width;
+            let image_height = cell.height;
 
-        buffer
-    }
-
-    fn render_cell(cell: &Cell, buffer: &mut [u32], width: usize, height: usize) {
-        let image_width = cell.width;
-        let image_height = cell.height;
-
-        for y in 0..image_height {
-            let target_y = y + cell.y_offset;
-            if target_y >= height {
-                break;
-            }
-
-            for x in 0..image_width {
-                let target_x = x + cell.x_offset;
-                if target_x >= width {
+            for y in 0..image_height {
+                let target_y = y + cell.y_offset;
+                if target_y >= height {
                     break;
                 }
 
-                let pixel_index = y * image_width + x;
-                let pixel = cell.image[pixel_index];
-                let r = (pixel >> 16 & 0xFF) as u8;
-                let g = (pixel >> 8 & 0xFF) as u8;
-                let b = (pixel & 0xFF) as u8;
+                for x in 0..image_width {
+                    let target_x = x + cell.x_offset;
+                    if target_x >= width {
+                        break;
+                    }
 
-                let target_index = target_y * width + target_x;
-                buffer[target_index] = (r as u32) << 16 | (g as u32) << 8 | (b as u32);
+                    let pixel_index = y * image_width + x;
+                    let pixel = cell.image[pixel_index];
+                    let r = (pixel >> 16 & 0xFF) as u8;
+                    let g = (pixel >> 8 & 0xFF) as u8;
+                    let b = (pixel & 0xFF) as u8;
+
+                    let target_index = target_y * width + target_x;
+                    buffer[target_index] = (r as u32) << 16 | (g as u32) << 8 | (b as u32);
+                }
             }
         }
+
+        buffer
     }
 }
