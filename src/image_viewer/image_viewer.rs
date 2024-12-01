@@ -15,7 +15,7 @@ pub struct Viewport {
 }
 
 pub struct ImageViewer {
-    window: Viewport,
+    viewport: Viewport,
     buffer: Vec<u32>,
 }
 
@@ -78,14 +78,17 @@ impl ImageViewer {
 
         let buffer = Self::render(cells, window_width, window_height);
 
-        Self { window, buffer }
+        Self {
+            viewport: window,
+            buffer,
+        }
     }
 
     pub fn run(&mut self) {
-        let window = &mut self.window.window;
+        let window = &mut self.viewport.window;
         while window.is_open() && !window.is_key_down(Key::Escape) {
             if let Err(error) =
-                window.update_with_buffer(&self.buffer, self.window.width, self.window.height)
+                window.update_with_buffer(&self.buffer, self.viewport.width, self.viewport.height)
             {
                 eprintln!("Error updating buffer: {:?}", error);
             }
