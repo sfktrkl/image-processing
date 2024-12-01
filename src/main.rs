@@ -4,7 +4,7 @@ mod utility;
 
 use image_processing::filters::{ImageFilter, PrewittFilter, SobelFilter};
 use image_processing::image_processor::ImageProcessor;
-use image_viewer::image_viewer::ImageViewer;
+use image_viewer::Viewer;
 use std::thread;
 use utility::Utility;
 
@@ -23,7 +23,7 @@ fn main() {
                 Utility::convert_grayscale_to_rgb(&sobel_filter_output),
                 Utility::convert_grayscale_to_rgb(&prewitt_filter_output),
             ];
-            let mut window = ImageViewer::new(input_pixels, output_pixels, dimensions);
+            let mut window = Viewer::new(input_pixels, output_pixels, dimensions);
             window.run();
         });
         handles.push(handle);

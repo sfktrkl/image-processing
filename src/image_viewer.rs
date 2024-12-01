@@ -14,17 +14,17 @@ pub struct Viewport {
     window: Window,
 }
 
-pub struct ImageViewer {
+pub struct Viewer {
     viewport: Viewport,
     buffer: Vec<u32>,
 }
 
-impl ImageViewer {
+impl Viewer {
     pub fn new(
         original: Vec<u32>,
         processed: Vec<Vec<u32>>,
         image_dimensions: (u32, u32),
-    ) -> ImageViewer {
+    ) -> Viewer {
         let cell_width = image_dimensions.0 as usize;
         let cell_height = image_dimensions.1 as usize;
 
