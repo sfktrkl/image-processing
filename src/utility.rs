@@ -48,7 +48,7 @@ impl Utility {
         (pixels, image.dimensions())
     }
 
-    pub fn convert_rgb_to_grayscale(pixels: &Vec<u32>) -> Vec<f32> {
+    pub fn convert_rgb_to_grayscale(pixels: &[u32]) -> Vec<f32> {
         pixels
             .chunks(1)
             .map(|pixel| {

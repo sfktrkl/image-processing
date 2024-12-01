@@ -5,31 +5,48 @@ mod utility;
 use image_processing::filters::{ImageFilter, PrewittFilter, SobelFilter};
 use image_processing::image_processor::ImageProcessor;
 use image_viewer::Viewer;
-use std::thread;
 use utility::Utility;
 
 fn main() {
     let files = Utility::list_input_output_image_files();
+    let kernels = vec![SobelFilter::get_kernel(), PrewittFilter::get_kernel()];
 
     let mut handles = vec![];
-    for (input, _) in files {
-        let handle = thread::spawn(move || {
-            let (input_pixels, dimensions) = Utility::image_file_to_rgb(&input);
-            let grayscale_pixels = Utility::convert_rgb_to_grayscale(&input_pixels);
-            let image_processor = ImageProcessor::new(&grayscale_pixels, dimensions);
-            let sobel_filter_output = image_processor.process(SobelFilter::get_kernel());
-            let prewitt_filter_output = image_processor.process(PrewittFilter::get_kernel());
-            let output_pixels = vec![
-                Utility::convert_grayscale_to_rgb(&sobel_filter_output),
-                Utility::convert_grayscale_to_rgb(&prewitt_filter_output),
-            ];
-            let mut window = Viewer::new(input_pixels, output_pixels, dimensions);
-            window.run();
+    for (input_file, _) in files {
+        let (input, outputs, dimensions) = prepare_images(&input_file, &kernels);
+
+        let handle = std::thread::spawn(move || {
+            view_images(input, outputs, dimensions);
         });
+
         handles.push(handle);
     }
 
     for handle in handles {
         handle.join().expect("Thread panicked");
     }
+}
+
+fn prepare_images(file: &str, kernels: &[(&str, &str)]) -> (Vec<u32>, Vec<Vec<u32>>, (u32, u32)) {
+    let (input, dimensions) = Utility::image_file_to_rgb(&file);
+    let output = process_image(&input, dimensions, &kernels);
+    (input, output, dimensions)
+}
+
+fn process_image(input: &[u32], dimensions: (u32, u32), kernels: &[(&str, &str)]) -> Vec<Vec<u32>> {
+    let grayscale = Utility::convert_rgb_to_grayscale(input);
+
+    kernels
+        .iter()
+        .map(|&kernel| {
+            let processor = ImageProcessor::new(&grayscale, dimensions);
+            let output = processor.process(kernel);
+            Utility::convert_grayscale_to_rgb(&output)
+        })
+        .collect()
+}
+
+fn view_images(input: Vec<u32>, outputs: Vec<Vec<u32>>, dimensions: (u32, u32)) {
+    let mut window = Viewer::new(input, outputs, dimensions);
+    window.run();
 }
