@@ -13,6 +13,7 @@ impl ImageFilter for SobelFilter {
             __kernel void sobelEdgeDetection(
                 __global const float* inputImage,
                 __global float* outputImage,
+                __global const float* options,
                 const int width,
                 const int height) {
                 
@@ -55,6 +56,7 @@ impl ImageFilter for PrewittFilter {
             __kernel void prewittEdgeDetection(
                 __global const float* inputImage,
                 __global float* outputImage,
+                __global const float* options,
                 const int width,
                 const int height) {
                 
@@ -97,6 +99,7 @@ impl ImageFilter for CannyFilter {
             __kernel void cannyEdgeDetection(
                 __global const float* inputImage,
                 __global float* outputImage,
+                __global const float* options,
                 const int width,
                 const int height) {
                 int x = get_global_id(0);
