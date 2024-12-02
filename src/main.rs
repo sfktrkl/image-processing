@@ -2,14 +2,18 @@ mod image_processing;
 mod image_viewer;
 mod utility;
 
-use image_processing::filters::{ImageFilter, PrewittFilter, SobelFilter};
+use image_processing::filters::{CannyFilter, ImageFilter, PrewittFilter, SobelFilter};
 use image_processing::image_processor::ImageProcessor;
 use image_viewer::Viewer;
 use utility::Utility;
 
 fn main() {
     let files = Utility::list_input_output_image_files();
-    let kernels = vec![SobelFilter::get_kernel(), PrewittFilter::get_kernel()];
+    let kernels = vec![
+        SobelFilter::get_kernel(),
+        PrewittFilter::get_kernel(),
+        CannyFilter::get_kernel(),
+    ];
 
     let mut handles = vec![];
     for (input_file, _) in files {
