@@ -129,8 +129,8 @@ impl ImageFilter for CannyFilter {
                 float magnitude = sqrt(edgeX * edgeX + edgeY * edgeY);
         
                 // Apply thresholds
-                const float lowThreshold = 1.0;
-                const float highThreshold = 3.0;
+                float lowThreshold = options[0];
+                float highThreshold = options[1];
                 if (magnitude > highThreshold) {
                     outputImage[y * width + x] = 1.0; // Strong edge
                 } else if (magnitude > lowThreshold) {
