@@ -39,11 +39,14 @@ fn prepare_images(file: &str, kernels: &[(&str, &str)]) -> (Vec<u32>, Vec<Vec<u3
 
 fn process_image(input: &[u32], dimensions: (u32, u32), kernels: &[(&str, &str)]) -> Vec<Vec<u32>> {
     let grayscale = Utility::convert_rgb_to_grayscale(input);
-    let options = Utility::compute_thresholds(&grayscale);
 
     kernels
         .iter()
         .map(|&kernel| {
+            let options = match kernel.1 {
+                "cannyEdgeDetection" => Utility::compute_thresholds(&grayscale),
+                _ => vec![],
+            };
             let processor = ImageProcessor::new(&grayscale, &options, dimensions);
             let output = processor.process(kernel);
             Utility::convert_grayscale_to_rgb(&output)
