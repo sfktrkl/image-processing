@@ -3,11 +3,14 @@ pub struct PrewittFilter;
 pub struct CannyFilter;
 
 pub trait ImageFilter {
-    fn get_kernel() -> (&'static str, &'static str);
+    fn get_kernel(&self) -> (&'static str, &'static str);
+    fn compute_options(&self, _: &[f32]) -> Vec<f32> {
+        vec![]
+    }
 }
 
 impl ImageFilter for SobelFilter {
-    fn get_kernel() -> (&'static str, &'static str) {
+    fn get_kernel(&self) -> (&'static str, &'static str) {
         (
             r#"
             __kernel void sobelEdgeDetection(
@@ -50,7 +53,7 @@ impl ImageFilter for SobelFilter {
 }
 
 impl ImageFilter for PrewittFilter {
-    fn get_kernel() -> (&'static str, &'static str) {
+    fn get_kernel(&self) -> (&'static str, &'static str) {
         (
             r#"
             __kernel void prewittEdgeDetection(
@@ -93,7 +96,7 @@ impl ImageFilter for PrewittFilter {
 }
 
 impl ImageFilter for CannyFilter {
-    fn get_kernel() -> (&'static str, &'static str) {
+    fn get_kernel(&self) -> (&'static str, &'static str) {
         (
             r#"
             __kernel void cannyEdgeDetection(
@@ -142,5 +145,16 @@ impl ImageFilter for CannyFilter {
             "#,
             "cannyEdgeDetection",
         )
+    }
+
+    fn compute_options(&self, pixels: &[f32]) -> Vec<f32> {
+        let len = pixels.len() as f32;
+        let mean = pixels.iter().sum::<f32>() / len;
+        let std_dev = (pixels.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / len).sqrt();
+
+        let low_threshold = mean - std_dev;
+        let high_threshold = mean + std_dev;
+
+        vec![low_threshold.max(0.0), high_threshold.min(1.0)]
     }
 }

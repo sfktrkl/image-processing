@@ -61,17 +61,6 @@ impl Utility {
             .collect()
     }
 
-    pub fn compute_thresholds(pixels: &[f32]) -> Vec<f32> {
-        let len = pixels.len() as f32;
-        let mean = pixels.iter().sum::<f32>() / len;
-        let std_dev = (pixels.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / len).sqrt();
-
-        let low_threshold = mean - std_dev;
-        let high_threshold = mean + std_dev;
-
-        vec![low_threshold.max(0.0), high_threshold.min(1.0)]
-    }
-
     pub fn convert_grayscale_to_rgb(pixels: &[f32]) -> Vec<u32> {
         pixels
             .iter()

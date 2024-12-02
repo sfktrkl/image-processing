@@ -9,10 +9,10 @@ use utility::Utility;
 
 fn main() {
     let files = Utility::list_input_output_image_files();
-    let kernels = vec![
-        SobelFilter::get_kernel(),
-        PrewittFilter::get_kernel(),
-        CannyFilter::get_kernel(),
+    let kernels: Vec<Box<dyn ImageFilter>> = vec![
+        Box::new(SobelFilter),
+        Box::new(PrewittFilter),
+        Box::new(CannyFilter),
     ];
 
     let mut handles = vec![];
@@ -31,24 +31,28 @@ fn main() {
     }
 }
 
-fn prepare_images(file: &str, kernels: &[(&str, &str)]) -> (Vec<u32>, Vec<Vec<u32>>, (u32, u32)) {
+fn prepare_images(
+    file: &str,
+    kernels: &[Box<dyn ImageFilter>],
+) -> (Vec<u32>, Vec<Vec<u32>>, (u32, u32)) {
     let (input, dimensions) = Utility::image_file_to_rgb(&file);
     let output = process_image(&input, dimensions, &kernels);
     (input, output, dimensions)
 }
 
-fn process_image(input: &[u32], dimensions: (u32, u32), kernels: &[(&str, &str)]) -> Vec<Vec<u32>> {
+fn process_image(
+    input: &[u32],
+    dimensions: (u32, u32),
+    kernels: &[Box<dyn ImageFilter>],
+) -> Vec<Vec<u32>> {
     let grayscale = Utility::convert_rgb_to_grayscale(input);
 
     kernels
         .iter()
-        .map(|&kernel| {
-            let options = match kernel.1 {
-                "cannyEdgeDetection" => Utility::compute_thresholds(&grayscale),
-                _ => vec![],
-            };
+        .map(|kernel| {
+            let options = kernel.compute_options(&grayscale);
             let processor = ImageProcessor::new(&grayscale, &options, dimensions);
-            let output = processor.process(kernel);
+            let output = processor.process(kernel.get_kernel());
             Utility::convert_grayscale_to_rgb(&output)
         })
         .collect()
