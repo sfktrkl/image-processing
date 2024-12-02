@@ -5,6 +5,7 @@ mod utility;
 use image_processing::filters::{
     CannyFilter, GaussianBlur, ImageFilter, PrewittFilter, SobelFilter,
 };
+use image_processing::image_converter::ImageConverter;
 use image_processing::image_processor::ImageProcessor;
 use image_processing::preprocessor::Preprocessor;
 use image_viewer::Viewer;
@@ -63,11 +64,11 @@ fn process_image(
                 let g_output = g_processor.process(kernel);
                 let b_processor = ImageProcessor::new(&channels.2, &options, dimensions);
                 let b_output = b_processor.process(kernel);
-                Preprocessor::recompose_rgb(&r_output, &g_output, &b_output)
+                ImageConverter::recompose_rgb(&r_output, &g_output, &b_output)
             } else {
                 let processor = ImageProcessor::new(&channels.0, &options, dimensions);
                 let output = processor.process(kernel);
-                Preprocessor::convert_grayscale_to_rgb(&output)
+                ImageConverter::convert_grayscale_to_rgb(&output)
             }
         })
         .collect()
