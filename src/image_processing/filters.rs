@@ -1,6 +1,7 @@
 pub struct SobelFilter;
 pub struct PrewittFilter;
 pub struct CannyFilter;
+pub struct GaussianBlur;
 
 pub trait ImageFilter {
     fn get_kernel(&self) -> (&'static str, &'static str);
@@ -156,5 +157,76 @@ impl ImageFilter for CannyFilter {
         let high_threshold = mean + std_dev;
 
         vec![low_threshold.max(0.0), high_threshold.min(1.0)]
+    }
+}
+
+impl ImageFilter for GaussianBlur {
+    fn get_kernel(&self) -> (&'static str, &'static str) {
+        (
+            r#"
+            __kernel void gaussianBlur(
+                __global const float* inputImage,
+                __global float* outputImage,
+                __global const float* options,
+                const int width,
+                const int height) {
+                
+                int x = get_global_id(0);
+                int y = get_global_id(1);
+
+                int kernelOffset = 1;
+                int kernelSize = (int)options[0];
+                int halfKernel = kernelSize / 2;
+
+                float sum = 0.0;
+                float weightSum = 0.0;
+
+                for (int ky = -halfKernel; ky <= halfKernel; ky++) {
+                    for (int kx = -halfKernel; kx <= halfKernel; kx++) {
+                        int nx = x + kx;
+                        int ny = y + ky;
+
+                        if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+                            float pixel = inputImage[ny * width + nx];
+                            int kernelIndex = (ky + halfKernel) * kernelSize + (kx + halfKernel);
+                            float weight = options[kernelIndex + kernelOffset];
+                            sum += pixel * weight;
+                            weightSum += weight;
+                        }
+                    }
+                }
+
+                if (weightSum > 0.0) {
+                    outputImage[y * width + x] = sum / weightSum;
+                } else {
+                    outputImage[y * width + x] = inputImage[y * width + x];
+                }
+            }
+            "#,
+            "gaussianBlur",
+        )
+    }
+
+    fn compute_options(&self, _: &[f32]) -> Vec<f32> {
+        let kernel_size = 5;
+        let sigma = 1.0;
+
+        let mut kernel = vec![0.0; kernel_size * kernel_size];
+        let mut sum = 0.0;
+
+        let half = kernel_size as isize / 2;
+        for y in -half..=half {
+            for x in -half..=half {
+                let value = (-(x * x + y * y) as f32 / (2.0 * sigma * sigma)).exp();
+                kernel[((y + half) as usize) * kernel_size + (x + half) as usize] = value;
+                sum += value;
+            }
+        }
+
+        kernel.iter_mut().for_each(|v| *v /= sum);
+
+        let mut options = vec![kernel_size as f32];
+        options.extend(kernel);
+        options
     }
 }
