@@ -2,7 +2,9 @@ mod image_processing;
 mod image_viewer;
 mod utility;
 
-use image_processing::filters::{CannyFilter, ImageFilter, PrewittFilter, SobelFilter};
+use image_processing::filters::{
+    CannyFilter, GaussianBlur, ImageFilter, PrewittFilter, SobelFilter,
+};
 use image_processing::image_processor::ImageProcessor;
 use image_viewer::Viewer;
 use utility::Utility;
@@ -13,6 +15,7 @@ fn main() {
         Box::new(SobelFilter),
         Box::new(PrewittFilter),
         Box::new(CannyFilter),
+        Box::new(GaussianBlur),
     ];
 
     let mut handles = vec![];
@@ -43,17 +46,29 @@ fn prepare_images(
 fn process_image(
     input: &[u32],
     dimensions: (u32, u32),
-    kernels: &[Box<dyn ImageFilter>],
+    filters: &[Box<dyn ImageFilter>],
 ) -> Vec<Vec<u32>> {
     let grayscale = Utility::convert_rgb_to_grayscale(input);
 
-    kernels
+    filters
         .iter()
-        .map(|kernel| {
-            let options = kernel.compute_options(&grayscale);
-            let processor = ImageProcessor::new(&grayscale, &options, dimensions);
-            let output = processor.process(kernel.get_kernel());
-            Utility::convert_grayscale_to_rgb(&output)
+        .map(|filter| {
+            let kernel = filter.get_kernel();
+            let options = filter.compute_options(&grayscale);
+            if kernel.1 == "gaussianBlur" {
+                let channels = Utility::decompose_rgb(input);
+                let r_processor = ImageProcessor::new(&channels.0, &options, dimensions);
+                let r_output = r_processor.process(kernel);
+                let g_processor = ImageProcessor::new(&channels.1, &options, dimensions);
+                let g_output = g_processor.process(kernel);
+                let b_processor = ImageProcessor::new(&channels.2, &options, dimensions);
+                let b_output = b_processor.process(kernel);
+                Utility::recompose_rgb(&r_output, &g_output, &b_output)
+            } else {
+                let processor = ImageProcessor::new(&grayscale, &options, dimensions);
+                let output = processor.process(kernel);
+                Utility::convert_grayscale_to_rgb(&output)
+            }
         })
         .collect()
 }

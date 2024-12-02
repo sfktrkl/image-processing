@@ -71,4 +71,36 @@ impl Utility {
             })
             .collect()
     }
+
+    pub fn decompose_rgb(input: &[u32]) -> (Vec<f32>, Vec<f32>, Vec<f32>) {
+        let mut r_channel = Vec::with_capacity(input.len());
+        let mut g_channel = Vec::with_capacity(input.len());
+        let mut b_channel = Vec::with_capacity(input.len());
+
+        for &pixel in input {
+            let r = ((pixel >> 16) & 0xFF) as f32 / 255.0;
+            let g = ((pixel >> 8) & 0xFF) as f32 / 255.0;
+            let b = (pixel & 0xFF) as f32 / 255.0;
+            r_channel.push(r);
+            g_channel.push(g);
+            b_channel.push(b);
+        }
+
+        (r_channel, g_channel, b_channel)
+    }
+
+    pub fn recompose_rgb(r_channel: &[f32], g_channel: &[f32], b_channel: &[f32]) -> Vec<u32> {
+        let mut output = Vec::with_capacity(r_channel.len());
+
+        for i in 0..r_channel.len() {
+            let r = (r_channel[i].min(1.0).max(0.0) * 255.0) as u32;
+            let g = (g_channel[i].min(1.0).max(0.0) * 255.0) as u32;
+            let b = (b_channel[i].min(1.0).max(0.0) * 255.0) as u32;
+            let a = 255; // Fully opaque
+
+            output.push((a << 24) | (r << 16) | (g << 8) | b);
+        }
+
+        output
+    }
 }
