@@ -6,6 +6,7 @@ use image_processing::filters::{
     CannyFilter, GaussianBlur, ImageFilter, PrewittFilter, SobelFilter,
 };
 use image_processing::image_processor::ImageProcessor;
+use image_processing::preprocessor::Preprocessor;
 use image_viewer::Viewer;
 use utility::Utility;
 
@@ -48,26 +49,25 @@ fn process_image(
     dimensions: (u32, u32),
     filters: &[Box<dyn ImageFilter>],
 ) -> Vec<Vec<u32>> {
-    let grayscale = Utility::convert_rgb_to_grayscale(input);
-
     filters
         .iter()
         .map(|filter| {
+            let inputs = Preprocessor::prepare(input, filter);
             let kernel = filter.get_kernel();
-            let options = filter.compute_options(&grayscale);
+            let channels = inputs.0;
+            let options = inputs.1;
             if kernel.1 == "gaussianBlur" {
-                let channels = Utility::decompose_rgb(input);
                 let r_processor = ImageProcessor::new(&channels.0, &options, dimensions);
                 let r_output = r_processor.process(kernel);
                 let g_processor = ImageProcessor::new(&channels.1, &options, dimensions);
                 let g_output = g_processor.process(kernel);
                 let b_processor = ImageProcessor::new(&channels.2, &options, dimensions);
                 let b_output = b_processor.process(kernel);
-                Utility::recompose_rgb(&r_output, &g_output, &b_output)
+                Preprocessor::recompose_rgb(&r_output, &g_output, &b_output)
             } else {
-                let processor = ImageProcessor::new(&grayscale, &options, dimensions);
+                let processor = ImageProcessor::new(&channels.0, &options, dimensions);
                 let output = processor.process(kernel);
-                Utility::convert_grayscale_to_rgb(&output)
+                Preprocessor::convert_grayscale_to_rgb(&output)
             }
         })
         .collect()
