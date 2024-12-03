@@ -5,9 +5,7 @@ mod utility;
 use image_processing::filters::{
     CannyFilter, GaussianBlur, ImageFilter, PrewittFilter, SobelFilter,
 };
-use image_processing::image_converter::ImageConverter;
-use image_processing::opencl_processor::OpenCLProcessor;
-use image_processing::preprocessor::Preprocessor;
+use image_processing::image_processor::ImageProcessor;
 use image_viewer::Viewer;
 use utility::Utility;
 
@@ -41,37 +39,9 @@ fn prepare_images(
     kernels: &[Box<dyn ImageFilter>],
 ) -> (Vec<u32>, Vec<Vec<u32>>, (u32, u32)) {
     let (input, dimensions) = Utility::image_file_to_rgb(&file);
-    let output = process_image(&input, dimensions, &kernels);
+    let processor = ImageProcessor::new(&input, dimensions, &kernels);
+    let output = processor.process_image();
     (input, output, dimensions)
-}
-
-fn process_image(
-    input: &[u32],
-    dimensions: (u32, u32),
-    filters: &[Box<dyn ImageFilter>],
-) -> Vec<Vec<u32>> {
-    filters
-        .iter()
-        .map(|filter| {
-            let inputs = Preprocessor::prepare(input, filter);
-            let kernel = filter.get_kernel();
-            let channels = inputs.0;
-            let options = inputs.1;
-            if kernel.1 == "gaussianBlur" {
-                let r_processor = OpenCLProcessor::new(&channels.0, &options, dimensions);
-                let r_output = r_processor.process(kernel);
-                let g_processor = OpenCLProcessor::new(&channels.1, &options, dimensions);
-                let g_output = g_processor.process(kernel);
-                let b_processor = OpenCLProcessor::new(&channels.2, &options, dimensions);
-                let b_output = b_processor.process(kernel);
-                ImageConverter::recompose_rgb(&r_output, &g_output, &b_output)
-            } else {
-                let processor = OpenCLProcessor::new(&channels.0, &options, dimensions);
-                let output = processor.process(kernel);
-                ImageConverter::convert_grayscale_to_rgb(&output)
-            }
-        })
-        .collect()
 }
 
 fn view_images(input: Vec<u32>, outputs: Vec<Vec<u32>>, dimensions: (u32, u32)) {
