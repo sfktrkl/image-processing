@@ -1,17 +1,17 @@
 use ocl::ProQue;
 
-pub struct ImageProcessor<'a, 'b> {
+pub struct OpenCLProcessor<'a, 'b> {
     pixels: &'a [f32],
     options: &'b [f32],
     dimensions: (u32, u32),
 }
 
-impl<'a, 'b> ImageProcessor<'a, 'b> {
+impl<'a, 'b> OpenCLProcessor<'a, 'b> {
     pub fn new(
         pixels: &'a [f32],
         options: &'b [f32],
         dimensions: (u32, u32),
-    ) -> ImageProcessor<'a, 'b> {
+    ) -> OpenCLProcessor<'a, 'b> {
         Self {
             pixels,
             options,

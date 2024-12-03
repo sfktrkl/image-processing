@@ -6,7 +6,7 @@ use image_processing::filters::{
     CannyFilter, GaussianBlur, ImageFilter, PrewittFilter, SobelFilter,
 };
 use image_processing::image_converter::ImageConverter;
-use image_processing::image_processor::ImageProcessor;
+use image_processing::opencl_processor::OpenCLProcessor;
 use image_processing::preprocessor::Preprocessor;
 use image_viewer::Viewer;
 use utility::Utility;
@@ -58,15 +58,15 @@ fn process_image(
             let channels = inputs.0;
             let options = inputs.1;
             if kernel.1 == "gaussianBlur" {
-                let r_processor = ImageProcessor::new(&channels.0, &options, dimensions);
+                let r_processor = OpenCLProcessor::new(&channels.0, &options, dimensions);
                 let r_output = r_processor.process(kernel);
-                let g_processor = ImageProcessor::new(&channels.1, &options, dimensions);
+                let g_processor = OpenCLProcessor::new(&channels.1, &options, dimensions);
                 let g_output = g_processor.process(kernel);
-                let b_processor = ImageProcessor::new(&channels.2, &options, dimensions);
+                let b_processor = OpenCLProcessor::new(&channels.2, &options, dimensions);
                 let b_output = b_processor.process(kernel);
                 ImageConverter::recompose_rgb(&r_output, &g_output, &b_output)
             } else {
-                let processor = ImageProcessor::new(&channels.0, &options, dimensions);
+                let processor = OpenCLProcessor::new(&channels.0, &options, dimensions);
                 let output = processor.process(kernel);
                 ImageConverter::convert_grayscale_to_rgb(&output)
             }
