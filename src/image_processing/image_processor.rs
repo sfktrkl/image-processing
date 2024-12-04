@@ -28,31 +28,36 @@ impl<'a, 'b> ImageProcessor<'a, 'b> {
             .map(|filter| {
                 let inputs = Preprocessor::prepare(self.input, filter);
                 let kernel = filter.get_kernel();
-                let channels = inputs.0;
-                let options = inputs.1;
-                if kernel.1 == "gaussianBlur" || kernel.1 == "laplacianSharpening" {
-                    let channels = vec![
-                        OpenCLProcessor::new(&channels.0, &options, self.dimensions)
-                            .process(kernel),
-                        OpenCLProcessor::new(&channels.1, &options, self.dimensions)
-                            .process(kernel),
-                        OpenCLProcessor::new(&channels.2, &options, self.dimensions)
-                            .process(kernel),
-                    ];
-                    if kernel.1 == "gaussianBlur" {
-                        ImageConverter::recompose_rgb(&channels[0], &channels[1], &channels[2])
-                    } else {
-                        ImageConverter::recompose_rgb_with_original(
-                            &channels[0],
-                            &channels[1],
-                            &channels[2],
-                            self.input,
-                        )
+                let (channels, options) = inputs;
+
+                let channels: Vec<Vec<f32>> = match kernel.1 {
+                    "gaussianBlur" | "laplacianSharpening" => {
+                        vec![
+                            OpenCLProcessor::new(&channels.0, &options, self.dimensions)
+                                .process(kernel),
+                            OpenCLProcessor::new(&channels.1, &options, self.dimensions)
+                                .process(kernel),
+                            OpenCLProcessor::new(&channels.2, &options, self.dimensions)
+                                .process(kernel),
+                        ]
                     }
-                } else {
-                    let channels = OpenCLProcessor::new(&channels.0, &options, self.dimensions)
-                        .process(kernel);
-                    ImageConverter::convert_grayscale_to_rgb(&channels)
+                    _ => {
+                        vec![OpenCLProcessor::new(&channels.0, &options, self.dimensions)
+                            .process(kernel)]
+                    }
+                };
+
+                match kernel.1 {
+                    "gaussianBlur" => {
+                        ImageConverter::recompose_rgb(&channels[0], &channels[1], &channels[2])
+                    }
+                    "laplacianSharpening" => ImageConverter::recompose_rgb_with_original(
+                        &channels[0],
+                        &channels[1],
+                        &channels[2],
+                        self.input,
+                    ),
+                    _ => ImageConverter::convert_grayscale_to_rgb(&channels[0]),
                 }
             })
             .collect()
