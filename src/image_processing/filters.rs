@@ -2,6 +2,7 @@ pub struct SobelFilter;
 pub struct PrewittFilter;
 pub struct CannyFilter;
 pub struct GaussianBlur;
+pub struct LaplacianSharpening;
 
 pub trait ImageFilter {
     fn get_kernel(&self) -> (&'static str, &'static str);
@@ -228,5 +229,42 @@ impl ImageFilter for GaussianBlur {
         let mut options = vec![kernel_size as f32];
         options.extend(kernel);
         options
+    }
+}
+
+impl ImageFilter for LaplacianSharpening {
+    fn get_kernel(&self) -> (&'static str, &'static str) {
+        (
+            r#"
+                __kernel void laplacianSharpening(
+                    __global const float* inputImage,
+                    __global float* outputImage,
+                    __global const float* options,
+                    const int width,
+                    const int height) {
+                    
+                    int x = get_global_id(0);
+                    int y = get_global_id(1);
+
+                    if (x < 1 || y < 1 || x >= width - 1 || y >= height - 1) {
+                        return; // Skip the borders
+                    }
+
+                    // Laplacian kernel
+                    float laplacian[3][3] = {{0, -1, 0}, {-1, 4, -1}, {0, -1, 0}};
+
+                    float value = 0.0;
+                    for (int i = -1; i <= 1; i++) {
+                        for (int j = -1; j <= 1; j++) {
+                            float pixel = inputImage[(y + i) * width + (x + j)];
+                            value += laplacian[i + 1][j + 1] * pixel;
+                        }
+                    }
+
+                    outputImage[y * width + x] = value;
+                }
+            "#,
+            "laplacianSharpening",
+        )
     }
 }
