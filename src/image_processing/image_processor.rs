@@ -30,7 +30,7 @@ impl<'a, 'b> ImageProcessor<'a, 'b> {
                 let kernel = filter.get_kernel();
                 let channels = inputs.0;
                 let options = inputs.1;
-                if kernel.1 == "gaussianBlur" {
+                if kernel.1 == "gaussianBlur" || kernel.1 == "laplacianSharpening" {
                     let channels = vec![
                         OpenCLProcessor::new(&channels.0, &options, self.dimensions)
                             .process(kernel),
@@ -39,7 +39,16 @@ impl<'a, 'b> ImageProcessor<'a, 'b> {
                         OpenCLProcessor::new(&channels.2, &options, self.dimensions)
                             .process(kernel),
                     ];
-                    ImageConverter::recompose_rgb(&channels[0], &channels[1], &channels[2])
+                    if kernel.1 == "gaussianBlur" {
+                        ImageConverter::recompose_rgb(&channels[0], &channels[1], &channels[2])
+                    } else {
+                        ImageConverter::recompose_rgb_with_original(
+                            &channels[0],
+                            &channels[1],
+                            &channels[2],
+                            self.input,
+                        )
+                    }
                 } else {
                     let channels = OpenCLProcessor::new(&channels.0, &options, self.dimensions)
                         .process(kernel);

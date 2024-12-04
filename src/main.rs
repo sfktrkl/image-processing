@@ -3,7 +3,7 @@ mod image_viewer;
 mod utility;
 
 use image_processing::filters::{
-    CannyFilter, GaussianBlur, ImageFilter, PrewittFilter, SobelFilter,
+    CannyFilter, GaussianBlur, ImageFilter, LaplacianSharpening, PrewittFilter, SobelFilter,
 };
 use image_processing::image_processor::ImageProcessor;
 use image_viewer::Viewer;
@@ -16,6 +16,7 @@ fn main() {
         Box::new(PrewittFilter),
         Box::new(CannyFilter),
         Box::new(GaussianBlur),
+        Box::new(LaplacianSharpening),
     ];
 
     let mut handles = vec![];

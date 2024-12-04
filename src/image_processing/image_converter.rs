@@ -56,4 +56,28 @@ impl ImageConverter {
 
         output
     }
+
+    pub fn recompose_rgb_with_original(
+        r_channel: &[f32],
+        g_channel: &[f32],
+        b_channel: &[f32],
+        original: &[u32],
+    ) -> Vec<u32> {
+        let mut output = Vec::with_capacity(r_channel.len());
+
+        for i in 0..r_channel.len() {
+            let orig_r = ((original[i] >> 16) & 0xFF) as f32 / 255.0;
+            let orig_g = ((original[i] >> 8) & 0xFF) as f32 / 255.0;
+            let orig_b = (original[i] & 0xFF) as f32 / 255.0;
+
+            let r = ((r_channel[i] + orig_r).min(1.0).max(0.0) * 255.0) as u32;
+            let g = ((g_channel[i] + orig_g).min(1.0).max(0.0) * 255.0) as u32;
+            let b = ((b_channel[i] + orig_b).min(1.0).max(0.0) * 255.0) as u32;
+            let a = 255; // Fully opaque
+
+            output.push((a << 24) | (r << 16) | (g << 8) | b);
+        }
+
+        output
+    }
 }
