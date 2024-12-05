@@ -3,11 +3,11 @@ pub struct ImageConverter;
 impl ImageConverter {
     pub fn convert_rgb_to_grayscale(pixels: &[u32]) -> Vec<f32> {
         pixels
-            .chunks(1)
+            .iter()
             .map(|pixel| {
-                let r = ((pixel[0] >> 16) & 0xFF) as f32 / 255.0;
-                let g = ((pixel[0] >> 8) & 0xFF) as f32 / 255.0;
-                let b = (pixel[0] & 0xFF) as f32 / 255.0;
+                let r = ((pixel >> 16) & 0xFF) as f32 / 255.0;
+                let g = ((pixel >> 8) & 0xFF) as f32 / 255.0;
+                let b = (pixel & 0xFF) as f32 / 255.0;
 
                 0.2989 * r + 0.5870 * g + 0.1140 * b
             })
