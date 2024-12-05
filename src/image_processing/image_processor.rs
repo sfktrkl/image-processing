@@ -31,7 +31,7 @@ impl<'a, 'b> ImageProcessor<'a, 'b> {
                 let (channels, options) = inputs;
 
                 let channels: Vec<Vec<f32>> = match kernel.1 {
-                    "gaussianBlur" | "laplacianSharpening" => {
+                    "gaussianBlur" | "laplacianSharpening" | "bayerOrderedDithering" => {
                         vec![
                             OpenCLProcessor::new(&channels.0, &options, self.dimensions)
                                 .process(kernel),
@@ -48,7 +48,7 @@ impl<'a, 'b> ImageProcessor<'a, 'b> {
                 };
 
                 match kernel.1 {
-                    "gaussianBlur" => {
+                    "gaussianBlur" | "bayerOrderedDithering" => {
                         ImageConverter::recompose_rgb(&channels[0], &channels[1], &channels[2])
                     }
                     "laplacianSharpening" => ImageConverter::recompose_rgb_with_original(

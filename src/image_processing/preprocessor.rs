@@ -12,7 +12,7 @@ impl Preprocessor {
         let options = filter.compute_options(&grayscale);
         let kernel = filter.get_kernel();
         match kernel.1 {
-            "gaussianBlur" | "laplacianSharpening" => {
+            "gaussianBlur" | "laplacianSharpening" | "bayerOrderedDithering" => {
                 let channels = ImageConverter::decompose_rgb(input);
                 (channels, options)
             }
