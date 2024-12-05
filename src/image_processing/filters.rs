@@ -3,6 +3,7 @@ pub struct PrewittFilter;
 pub struct CannyFilter;
 pub struct GaussianBlur;
 pub struct LaplacianSharpening;
+pub struct BayerOrderedDithering;
 
 pub trait ImageFilter {
     fn get_kernel(&self) -> (&'static str, &'static str);
@@ -266,5 +267,70 @@ impl ImageFilter for LaplacianSharpening {
             "#,
             "laplacianSharpening",
         )
+    }
+}
+
+impl ImageFilter for BayerOrderedDithering {
+    fn get_kernel(&self) -> (&'static str, &'static str) {
+        (
+            r#"
+                __kernel void bayerOrderedDithering(
+                    __global const float* inputImage,
+                    __global float* outputImage,
+                    __global const float* options,
+                    const int width,
+                    const int height) {
+
+                    int x = get_global_id(0);
+                    int y = get_global_id(1);
+
+                    // Check if the current pixel is within bounds
+                    if (x >= width || y >= height) {
+                        return;
+                    }
+
+                    int idx = y * width + x;
+                    float old_pixel = inputImage[idx];
+
+                    // Get the threshold matrix size (first element in options)
+                    int matrix_size = (int)options[0];
+
+                    // Get the corresponding threshold value from the threshold matrix
+                    int matrix_x = x % matrix_size;
+                    int matrix_y = y % matrix_size;
+                    float threshold = options[1 + matrix_y * matrix_size + matrix_x]; // Flattened matrix
+
+                    // Quantize the pixel based on the threshold
+                    float new_pixel = old_pixel >= threshold ? 255.0f : 0.0f;
+
+                    // Set the output pixel to the quantized value
+                    outputImage[idx] = new_pixel;
+                }
+            "#,
+            "bayerOrderedDithering",
+        )
+    }
+
+    fn compute_options(&self, _: &[f32]) -> Vec<f32> {
+        // Define a 4x4 Bayer Matrix
+        let mut threshold_matrix = vec![
+            vec![0.0, 8.0, 2.0, 10.0],
+            vec![12.0, 4.0, 14.0, 6.0],
+            vec![3.0, 11.0, 1.0, 9.0],
+            vec![15.0, 7.0, 13.0, 5.0],
+        ];
+
+        let matrix_size = 4;
+        for row in &mut threshold_matrix {
+            for value in row.iter_mut() {
+                *value /= 16.0;
+            }
+        }
+
+        let mut options = vec![matrix_size as f32];
+        for row in threshold_matrix {
+            options.extend(row);
+        }
+        options
     }
 }
