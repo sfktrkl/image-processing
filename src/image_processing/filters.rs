@@ -21,13 +21,13 @@ impl ImageFilter for SobelFilter {
                 __global float* outputImage,
                 __global const float* options,
                 const int width, const int height) {
-                
+
                 int x = get_global_id(0);
                 int y = get_global_id(1);
-        
+
                 if (x < 1 || y < 1 || x >= width - 1 || y >= height - 1)
                     return; // Skip the borders
-        
+
                 float edgeX = 0.0, edgeY = 0.0;
                 for (int i = -1; i <= 1; i++)
                 {
@@ -38,7 +38,7 @@ impl ImageFilter for SobelFilter {
                         edgeY += options[9 + (i + 1) * 3 + (j + 1)] * pixel;
                     }
                 }
-        
+
                 // Calculate magnitude of gradient
                 float magnitude = sqrt(edgeX * edgeX + edgeY * edgeY);
                 outputImage[y * width + x] = magnitude;
@@ -68,13 +68,13 @@ impl ImageFilter for PrewittFilter {
                 __global float* outputImage,
                 __global const float* options,
                 const int width, const int height) {
-                
+
                 int x = get_global_id(0);
                 int y = get_global_id(1);
-        
+
                 if (x < 1 || y < 1 || x >= width - 1 || y >= height - 1)
                     return; // Skip the borders
-        
+
                 float edgeX = 0.0, edgeY = 0.0;
                 for (int i = -1; i <= 1; i++)
                 {
@@ -85,7 +85,7 @@ impl ImageFilter for PrewittFilter {
                         edgeY += options[9 + (i + 1) * 3 + (j + 1)] * pixel;
                     }
                 }
-        
+
                 // Calculate magnitude of gradient
                 float magnitude = sqrt(edgeX * edgeX + edgeY * edgeY);
                 outputImage[y * width + x] = magnitude;
@@ -249,24 +249,21 @@ impl ImageFilter for LaplacianSharpening {
                     __global const float* inputImage,
                     __global float* outputImage,
                     __global const float* options,
-                    const int width,
-                    const int height) {
-                    
+                    const int width, const int height) {
+
                     int x = get_global_id(0);
                     int y = get_global_id(1);
 
-                    if (x < 1 || y < 1 || x >= width - 1 || y >= height - 1) {
+                    if (x < 1 || y < 1 || x >= width - 1 || y >= height - 1)
                         return; // Skip the borders
-                    }
-
-                    // Laplacian kernel
-                    float laplacian[3][3] = {{0, -1, 0}, {-1, 4, -1}, {0, -1, 0}};
 
                     float value = 0.0;
-                    for (int i = -1; i <= 1; i++) {
-                        for (int j = -1; j <= 1; j++) {
+                    for (int i = -1; i <= 1; i++)
+                    {
+                        for (int j = -1; j <= 1; j++)
+                        {
                             float pixel = inputImage[(y + i) * width + (x + j)];
-                            value += laplacian[i + 1][j + 1] * pixel;
+                            value += options[(i + 1) * 3 + (j + 1)] * pixel;
                         }
                     }
 
@@ -275,6 +272,10 @@ impl ImageFilter for LaplacianSharpening {
             "#,
             "laplacianSharpening",
         )
+    }
+
+    fn compute_options(&self, _: &[f32]) -> Vec<f32> {
+        vec![0.0, -1.0, 0.0, -1.0, 4.0, -1.0, 0.0, -1.0, 0.0]
     }
 }
 
