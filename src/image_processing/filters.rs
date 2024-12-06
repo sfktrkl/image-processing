@@ -67,28 +67,22 @@ impl ImageFilter for PrewittFilter {
                 __global const float* inputImage,
                 __global float* outputImage,
                 __global const float* options,
-                const int width,
-                const int height) {
+                const int width, const int height) {
                 
                 int x = get_global_id(0);
                 int y = get_global_id(1);
         
-                if (x < 1 || y < 1 || x >= width - 1 || y >= height - 1) {
+                if (x < 1 || y < 1 || x >= width - 1 || y >= height - 1)
                     return; // Skip the borders
-                }
         
-                // Prewitt X and Y kernels
-                float Gx[3][3] = {{-1, 0, 1}, {-1, 0, 1}, {-1, 0, 1}};
-                float Gy[3][3] = {{-1, -1, -1}, {0, 0, 0}, {1, 1, 1}};
-        
-                float edgeX = 0.0;
-                float edgeY = 0.0;
-        
-                for (int i = -1; i <= 1; i++) {
-                    for (int j = -1; j <= 1; j++) {
+                float edgeX = 0.0, edgeY = 0.0;
+                for (int i = -1; i <= 1; i++)
+                {
+                    for (int j = -1; j <= 1; j++)
+                    {
                         float pixel = inputImage[(y + i) * width + (x + j)];
-                        edgeX += Gx[i + 1][j + 1] * pixel;
-                        edgeY += Gy[i + 1][j + 1] * pixel;
+                        edgeX += options[(i + 1) * 3 + (j + 1)] * pixel;
+                        edgeY += options[9 + (i + 1) * 3 + (j + 1)] * pixel;
                     }
                 }
         
@@ -99,6 +93,16 @@ impl ImageFilter for PrewittFilter {
             "#,
             "prewittEdgeDetection",
         )
+    }
+
+    fn compute_options(&self, _: &[f32]) -> Vec<f32> {
+        let prewitt_x = vec![-1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0];
+        let prewitt_y = vec![-1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
+
+        let mut options = Vec::new();
+        options.extend(&prewitt_x);
+        options.extend(&prewitt_y);
+        options
     }
 }
 
