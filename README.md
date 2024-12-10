@@ -65,8 +65,21 @@ Rust package manager will automatically download the dependencies.
   sudo reboot
   ```
 
-### Build and Run the Program
+### Running the Program
 
-```bash
-cargo run
-```
+- Folder structure
+
+  Ensure that the `input` folder exists in the project directory and contains image files in `.jpg`, `.jpeg`, or `.png` formats.
+
+- Build and run
+
+  ```bash
+  cargo run
+  ```
+
+- Production build and run
+
+  ```bash
+  cargo build --release
+  ./target/release/image-processing
+  ```
