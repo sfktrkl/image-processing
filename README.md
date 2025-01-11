@@ -1,5 +1,7 @@
 # Image processing
 
+![Image processing](image_processing.png)
+
 ### Rust Installation
 
 Install [Rust](https://rustup.rs/):
